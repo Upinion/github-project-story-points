@@ -103,48 +103,48 @@
 
     var resets = [];
 
-var start = debounce(() => {
-  // Reset
-  for (let reset of resets) {
-    reset();
-  }
-  resets = [];
-  // Projects
-  const projects = d.getElementsByClassName('project-columns-container');
-  if (projects.length > 0) {
-    const project = projects[0];
-    const columns = Array.from(project.getElementsByClassName('js-project-column')); // Was 'col-project-custom', but that's gitenterprise; github.com is 'project-column', fortunately, both have 'js-project-column'
-    for (let column of columns) {
-      const addStoryPoints = ((c) => debounce(() => {
-        resetStoryPointsForColumn(c);
-        addStoryPointsForColumn(c);
-      }, 50))(column);
-      column.addEventListener('DOMSubtreeModified', addStoryPoints);
-      column.addEventListener('drop', addStoryPoints);
-      addStoryPointsForColumn(column);
-      resets.push(((c) => () => {
-        resetStoryPointsForColumn(c);
-        column.removeEventListener('DOMSubtreeModified', addStoryPoints);
-        column.removeEventListener('drop', addStoryPoints);
-      })(column));
-    }
-  }
-  // Issues
-  const issues = Array.from(d.getElementsByClassName('js-issue-row'));
-  for (let issue of issues) {
-    const titleElement = issue.getElementsByClassName('h4')[0];
-    const story = (
-      pointsRegEx.exec(titleElement.innerText) ||
-      [null, '0', titleElement.innerText]
-    );
-    const storyPoints = parseFloat(story[2]) || 0;
-    const storyTitle = story[3];
-    const spentPoints = parseFloat(story[5]) || 0;
-    if (storyPoints || spentPoints) {
-      titleElement.innerHTML = titleWithPoints(storyTitle, storyPoints, spentPoints);
-    }
-  }
-}, 50);
+    var start = debounce(() => {
+        // Reset
+        for (let reset of resets) {
+            reset();
+        }
+        resets = [];
+        // Projects
+        const projects = d.getElementsByClassName('project-columns-container');
+        if (projects.length > 0) {
+            const project = projects[0];
+            const columns = Array.from(project.getElementsByClassName('js-project-column')); // Was 'col-project-custom', but that's gitenterprise; github.com is 'project-column', fortunately, both have 'js-project-column'
+            for (let column of columns) {
+                const addStoryPoints = ((c) => debounce(() => {
+                    resetStoryPointsForColumn(c);
+                    addStoryPointsForColumn(c);
+                }, 500))(column);
+                column.addEventListener('DOMSubtreeModified', addStoryPoints);
+                column.addEventListener('drop', addStoryPoints);
+                addStoryPointsForColumn(column);
+                resets.push(((c) => () => {
+                    resetStoryPointsForColumn(c);
+                    column.removeEventListener('DOMSubtreeModified', addStoryPoints);
+                    column.removeEventListener('drop', addStoryPoints);
+                })(column));
+            }
+        }
+        // Issues
+        const issues = Array.from(d.getElementsByClassName('js-issue-row'));
+        for (let issue of issues) {
+            const titleElement = issue.getElementsByClassName('h4')[0];
+            const story = (
+                pointsRegEx.exec(titleElement.innerText) ||
+                [null, '0', titleElement.innerText]
+            );
+            const storyPoints = parseFloat(story[2]) || 0;
+            const storyTitle = story[3];
+            const spentPoints = parseFloat(story[5]) || 0;
+            if (storyPoints || spentPoints) {
+                titleElement.innerHTML = titleWithPoints(storyTitle, storyPoints, spentPoints);
+            }
+        }
+    }, 50);
 
 // Hacks to restart the plugin on pushState change
     w.addEventListener('statechange', () => setTimeout(() => {
