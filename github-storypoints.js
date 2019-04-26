@@ -1,104 +1,107 @@
 (function (d, w) {
-'use strict';
+    'use strict';
 
-var pointsRegEx = /^(\(([\d\.]+)\)\s*)?(.+?)(\s*\[([\d\.]+)\])?$/im; // new RegExp("^(\(([\d\.]+)\))?(.+)(\[([\d\.]+)\])?$", "i"); // Was: /^\(([\d\.]+)\)(.+)/i; 
+    var pointsRegEx = /^(\(([\d\.]+)\)\s*)?(.+?)(\s*\[([\d\.]+)\])?$/im; // new RegExp("^(\(([\d\.]+)\))?(.+)(\[([\d\.]+)\])?$", "i"); // Was: /^\(([\d\.]+)\)(.+)/i;
 
-var debounce = function (func, wait, immediate) {
-  var timeout;
-  return function() {
-    var context = this, args = arguments;
-    var later = function() {
-      timeout = null;
-      if (!immediate) func.apply(context, args);
+    var debounce = function (func, wait, immediate) {
+        var timeout;
+        return function() {
+            var context = this, args = arguments;
+            var later = function() {
+                timeout = null;
+                if (!immediate) func.apply(context, args);
+            };
+            var callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if (callNow) func.apply(context, args);
+        };
     };
-    var callNow = immediate && !timeout;
-    clearTimeout(timeout);
-    timeout = setTimeout(later, wait);
-    if (callNow) func.apply(context, args);
-  };
-};
 
-var pluralize = (value) => (
-  value === 1 ? '' : 's'
-);
+    var pluralize = (value) => (
+        value === 1 ? '' : 's'
+    );
 
-var resetStoryPointsForColumn = (column) => {
-  const customElements = Array.from(column.getElementsByClassName('github-project-story-points'));
-  for (let e of customElements) {
-    const parent = e.parentNode;
-    if (parent.dataset.gpspOriginalContent) {
-      parent.innerText = parent.dataset.gpspOriginalContent;
-      delete parent.dataset.gpspOriginalContent;
-    } else {
-      parent.removeChild(e);
-    }
-  }
-};
+    var resetStoryPointsForColumn = (column) => {
+        const customElements = Array.from(column.getElementsByClassName('github-project-story-points'));
+        for (let e of customElements) {
+            const parent = e.parentNode;
+            if (parent.dataset.gpspOriginalContent) {
+                parent.innerText = parent.dataset.gpspOriginalContent;
+                delete parent.dataset.gpspOriginalContent;
+            } else {
+                parent.removeChild(e);
+            }
+        }
+    };
 
-var titleWithPoints = (title, points, spent) => (
-  `<span style="font-weight:bold">${title}</span><br \>
-  <span class="github-project-story-points counter"
-  style="font-size:xx-small">${spent} spent of ${points}</span>`
-);
+    var titleWithPoints = (title, points, spent) => (`
+        <span class="github-project-story-points counter"
+            style="border-radius: 8px; color: #6c6c6c; padding: 1px 5px; border: 1px solid #6c6c6c; margin-right: 3px;">${points}</span>
+        <span style="font-weight:bold">${title}</span>
+    `);
 
-var titleWithTotalPoints = (title, points, spent) => (
-    `${title}<span class="github-project-story-points" style="font-size:xx-small"> item${pluralize(title)} (${spent} spent of ${points})</span>`
-);
+    var titleWithTotalPoints = (title, points, spent) => (`
+        ${title}
+        <span class="github-project-story-points" style="font-size:x-small"> item${pluralize(title)}, </span>
+        ${points}
+        <span class="github-project-story-points" style="font-size:x-small"> point${pluralize(points)}</span>
+    `);
 
-var addStoryPointsForColumn = (column) => {
-  const columnCards = Array
-    .from(column.getElementsByClassName('issue-card'))
-    .filter(card => !card.classList.contains('sortable-ghost'))
-    .map(card => {
-      const titleElementContainer = Array
-        .from(card.getElementsByClassName('h5'))
-        .concat(Array.from(card.getElementsByTagName('p')))[0];
-      const titleElementLink = (
-        titleElementContainer.getElementsByTagName &&
-        titleElementContainer.getElementsByTagName('a') ||
-        []
-      );
-      const titleElement = (
-        titleElementLink.length > 0
-        ? titleElementLink[0]
-        : titleElementContainer
-      );
-      const title = titleElementContainer.innerText;
-      const story = (
-        pointsRegEx.exec(titleElement.innerText) ||
-        [null, '0', titleElement.innerText]
-      );
-      const storyPoints = parseFloat(story[2]) || 0;
-      const storyTitle = story[3];
-      const spentPoints = parseFloat(story[5]) || 0;
-      return {
-        element: card,
-        titleElement,
-        title,
-        titleNoPoints: storyTitle,
-        storyPoints,
-        spentPoints,
-      };
-    });
-  const columnCountElement = column.getElementsByClassName('js-column-card-count')[0];
+    var addStoryPointsForColumn = (column) => {
+        const columnCards = Array
+            .from(column.getElementsByClassName('issue-card'))
+            .filter(card => !card.classList.contains('sortable-ghost'))
+            .map(card => {
+                const titleElementContainer = Array
+                    .from(card.getElementsByClassName('h5'))
+                    .concat(Array.from(card.getElementsByTagName('p')))[0];
+                const titleElementLink = (
+                    titleElementContainer.getElementsByTagName &&
+                    titleElementContainer.getElementsByTagName('a') ||
+                    []
+                );
+                const titleElement = (
+                    titleElementLink.length > 0
+                        ? titleElementLink[0]
+                        : titleElementContainer
+                );
+                const title = titleElementContainer.innerText;
+                const story = (
+                    pointsRegEx.exec(titleElement.innerText) ||
+                    [null, '0', titleElement.innerText]
+                );
+                const storyPoints = parseFloat(story[2]) || 0;
+                const storyTitle = story[3];
+                const spentPoints = parseFloat(story[5]) || 0;
+                return {
+                    element: card,
+                    titleElement,
+                    title,
+                    titleNoPoints: storyTitle,
+                    storyPoints,
+                    spentPoints,
+                };
+            });
+        const columnCountElement = column.getElementsByClassName('js-column-card-count')[0];
 
-  let columnStoryPoints = 0;
-  let columnSpentPoints = 0;
-  for (let card of columnCards) {
-    columnStoryPoints += card.storyPoints;
-    columnSpentPoints += card.spentPoints;
-    if (card.storyPoints || card.spentPoints) {
-      card.titleElement.dataset.gpspOriginalContent = card.title;
-      card.titleElement.innerHTML = titleWithPoints(card.titleNoPoints, card.storyPoints, card.spentPoints);
-    }
-  }
-  // Apply DOM changes:
-  if (columnStoryPoints || columnSpentPoints) {
-    columnCountElement.innerHTML = titleWithTotalPoints(columnCards.length, columnStoryPoints, columnSpentPoints);
-  }
-};
+        let columnStoryPoints = 0;
+        let columnSpentPoints = 0;
+        for (let card of columnCards) {
+            columnStoryPoints += card.storyPoints;
+            columnSpentPoints += card.spentPoints;
+            if (card.storyPoints || card.spentPoints) {
+                card.titleElement.dataset.gpspOriginalContent = card.title;
+                card.titleElement.innerHTML = titleWithPoints(card.titleNoPoints, card.storyPoints, card.spentPoints);
+            }
+        }
+        // Apply DOM changes:
+        if (columnStoryPoints || columnSpentPoints) {
+            columnCountElement.innerHTML = titleWithTotalPoints(columnCards.length, columnStoryPoints, columnSpentPoints);
+        }
+    };
 
-var resets = [];
+    var resets = [];
 
 var start = debounce(() => {
   // Reset
@@ -144,20 +147,20 @@ var start = debounce(() => {
 }, 50);
 
 // Hacks to restart the plugin on pushState change
-w.addEventListener('statechange', () => setTimeout(() => {
-  const timelines = d.getElementsByClassName('new-discussion-timeline');
-  if (timelines.length > 0) {
-    const timeline = timelines[0];
-    const startOnce = () => {
-      timeline.removeEventListener('DOMSubtreeModified', startOnce);
-      start();
-    };
-    timeline.addEventListener('DOMSubtreeModified', startOnce);
-  }
-  start();
-}, 500));
+    w.addEventListener('statechange', () => setTimeout(() => {
+        const timelines = d.getElementsByClassName('new-discussion-timeline');
+        if (timelines.length > 0) {
+            const timeline = timelines[0];
+            const startOnce = () => {
+                timeline.removeEventListener('DOMSubtreeModified', startOnce);
+                start();
+            };
+            timeline.addEventListener('DOMSubtreeModified', startOnce);
+        }
+        start();
+    }, 500));
 
 // First start
-start();
+    start();
 
 })(document, window);
